@@ -68,7 +68,8 @@ def gen_file_tree(path: str, max_depth: int=None, only_dir: bool=False, exclude:
     if exclude is not None:
         if isinstance(exclude, str):
             exclude = [exclude]
-        all_files = [f for f in all_files for e in exclude if not re.match(e, f)]
+        for reg in exclude:
+            all_files = [f for f in all_files if not re.match(reg, f)]
     # recursively generate the tree
     root.children = [gen_file_tree(os.path.join(path, f), max_depth, only_dir, exclude, cur_depth+1) for f in all_files]
     # update the num_children
@@ -156,11 +157,23 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--name', type=str, default='.', help='the path you want to generate the tree')
     parser.add_argument('-d', '--depth', type=int, default=None, help='the max depth you want to generate')
     parser.add_argument('-o', '--only_dir', action='store_true', help='only contain dir')
-    parser.add_argument('-e', '--exclude', nargs='*', default=None, help='reg patterns you want to exclude, 0 or more')
-    parser.add_argument('-s', '--save', type=str, default='file_tree.md', help='the path you want to save the tree, default is ./file_tree.md')
+    parser.add_argument('-e', '--exclude', action='append', help='reg patterns you want to exclude, 0 or more')
+    parser.add_argument('-s', '--save', type=str, default=None, help='the path you want to save the tree, default is ./file_tree.md')
+    parser.add_argument('-p', '--print', action='store_false', help='print the tree')
     args = parser.parse_args()
     file_tree = gen_file_tree(args.name, args.depth, args.only_dir, args.exclude)
     get_file_tree_line(file_tree)
-    with open(args.save, 'w') as f:
-        f.write(gen_file_tree_str(file_tree))
-    print('Generate done!')
+    file_tree_str = gen_file_tree_str(file_tree)
+    file_tree_str = '```\n' + file_tree_str + '\n```'
+    if args.print:
+        print(file_tree_str)
+    if args.save:
+        if os.path.exists(args.save):
+            print(f'File {args.save} already exists, do you want to overwrite it? (y/n)')
+            ans = input()
+            if ans.lower() not in ['y', 'yes']:
+                print('Write failed!')
+                exit()
+        with open(args.save, 'w') as f:
+            f.write(file_tree_str)
+    print('Complete!')
