@@ -63,6 +63,8 @@ def gen_file_tree(path: str, max_depth: int=None, only_dir: bool=False, exclude:
         return root
     # get all files name in the directory
     all_files = os.listdir(path)
+    # exclude the link file
+    all_files = [f for f in all_files if not os.path.islink(os.path.join(path, f))]
     if only_dir:
         all_files = [f for f in all_files if os.path.isdir(os.path.join(path, f))]
     if exclude is not None:
